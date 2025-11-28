@@ -283,3 +283,126 @@ func TestEvalIfStatement(t *testing.T) {
 		}
 	}
 }
+
+// Phase 3: Functions - Real failing tests
+
+func TestEvalFunctionDeclaration(t *testing.T) {
+	input := `
+praise add(x, y):
+   serve x + y
+beef
+`
+	result := testEval(input)
+	assert.NotNil(t, result)
+
+	// Function declaration should return a Function object
+	fn, ok := result.(*object.Function)
+	assert.True(t, ok, "Result should be a Function object")
+	assert.Len(t, fn.Parameters, 2, "Function should have 2 parameters")
+	assert.Equal(t, "x", fn.Parameters[0].Value)
+	assert.Equal(t, "y", fn.Parameters[1].Value)
+	assert.NotNil(t, fn.Body, "Function should have a body")
+}
+
+func TestEvalFunctionCall(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		// Simple function call with explicit return
+		{`
+praise add(x, y):
+   serve x + y
+beef
+add(5, 3)
+`, 8},
+		// Function with single parameter
+		{`
+praise double(x):
+   serve x * 2
+beef
+double(4)
+`, 8},
+		// Function with no parameters
+		{`
+praise fortytwo():
+   serve 42
+beef
+fortytwo()
+`, 42},
+		// Multiple calls to same function
+		{`
+praise add(x, y):
+   serve x + y
+beef
+cut a = add(1, 2)
+cut b = add(3, 4)
+a + b
+`, 10},
+	}
+
+	for _, tt := range tests {
+		result := testEval(tt.input)
+		assert.NotNil(t, result, "Input: %s", tt.input)
+
+		integer, ok := result.(*object.Integer)
+		assert.True(t, ok, "Result should be an Integer for input: %s", tt.input)
+		assert.Equal(t, tt.expected, integer.Value, "Input: %s", tt.input)
+	}
+}
+
+func TestEvalFunctionWithoutReturn(t *testing.T) {
+	// Function without explicit serve should return NULL
+	input := `
+praise noReturn(x, y):
+   x + y
+beef
+noReturn(5, 3)
+`
+	result := testEval(input)
+	assert.NotNil(t, result)
+
+	null, ok := result.(*object.Null)
+	assert.True(t, ok, "Function without serve should return NULL")
+	assert.NotNil(t, null)
+}
+
+func TestEvalReturnStatement(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		// Simple return
+		{`
+praise getValue():
+   serve 42
+beef
+getValue()
+`, 42},
+		// Early return
+		{`
+praise earlyReturn():
+   serve 10
+   cut x = 99
+   x
+beef
+earlyReturn()
+`, 10},
+		// Return with expression
+		{`
+praise calculate():
+   serve 5 + 5
+beef
+calculate()
+`, 10},
+	}
+
+	for _, tt := range tests {
+		result := testEval(tt.input)
+		assert.NotNil(t, result, "Input: %s", tt.input)
+
+		integer, ok := result.(*object.Integer)
+		assert.True(t, ok, "Result should be an Integer for input: %s", tt.input)
+		assert.Equal(t, tt.expected, integer.Value, "Input: %s", tt.input)
+	}
+}

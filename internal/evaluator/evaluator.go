@@ -50,6 +50,15 @@ func Eval(node ast.Node, env *Environment) object.Object {
 	case *ast.IfStatement:
 		return evalIfStatement(n, env)
 
+	case *ast.FunctionDeclaration:
+		return evalFunctionDeclaration(n, env)
+
+	case *ast.ReturnStatement:
+		return evalReturnStatement(n, env)
+
+	case *ast.FunctionCall:
+		return evalFunctionCall(n, env)
+
 	// Expression statement: evaluate the expression
 	case *ast.ExpressionStatement:
 		return Eval(n.Expression, env)
@@ -195,11 +204,17 @@ func nativeBoolToBooleanObject(input bool) *object.Boolean {
 }
 
 // evalBlockStatement evaluates a block of statements and returns the last result
+// If a return statement is encountered, it stops execution and returns immediately
 func evalBlockStatement(block *ast.BlockStatement, env *Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range block.Statements {
 		result = Eval(statement, env)
+
+		// If we hit a return statement, stop executing and bubble it up
+		if result != nil && result.Type() == "RETURN_VALUE" {
+			return result
+		}
 	}
 
 	return result
@@ -231,4 +246,72 @@ func isTruthy(obj object.Object) bool {
 	default:
 		return true
 	}
+}
+
+// evalFunctionDeclaration creates a Function object and stores it in the environment
+func evalFunctionDeclaration(fn *ast.FunctionDeclaration, env *Environment) object.Object {
+	function := &object.Function{
+		Parameters: fn.Parameters,
+		Body:       fn.Body,
+		Env:        env, // Capture current environment (closure)
+	}
+
+	// Store the function in the environment by its name
+	env.Set(fn.Name.Value, function)
+
+	return function
+}
+
+// evalReturnStatement evaluates a return statement
+func evalReturnStatement(stmt *ast.ReturnStatement, env *Environment) object.Object {
+	val := Eval(stmt.ReturnValue, env)
+	// Wrap in ReturnValue to signal this is an early return
+	return &object.ReturnValue{Value: val}
+}
+
+// evalFunctionCall evaluates a function call expression
+func evalFunctionCall(call *ast.FunctionCall, env *Environment) object.Object {
+	// Evaluate the function expression (usually an identifier)
+	function := Eval(call.Function, env)
+
+	fn, ok := function.(*object.Function)
+	if !ok {
+		// Not a function - error
+		return object.NULL
+	}
+
+	// Evaluate all arguments
+	args := evalExpressions(call.Arguments, env)
+
+	// Create new environment for function execution (enclosed by function's closure env)
+	fnEnv := object.NewEnclosedEnvironment(fn.Env)
+
+	// Bind parameters to arguments
+	for i, param := range fn.Parameters {
+		fnEnv.Set(param.Value, args[i])
+	}
+
+	// Execute function body
+	result := Eval(fn.Body, fnEnv)
+
+	// Only return a value if there was an explicit "serve" statement
+	// Otherwise, functions return NULL (for side-effect-only functions)
+	if returnValue, ok := result.(*object.ReturnValue); ok {
+		return returnValue.Value
+	}
+
+	// No explicit return - function returns NULL
+	return object.NULL
+}
+
+// evalExpressions evaluates a list of expressions (used for function arguments)
+func evalExpressions(exps []ast.Expression, env *Environment) []object.Object {
+	result := []object.Object{}
+
+	for _, exp := range exps {
+		evaluated := Eval(exp, env)
+		result = append(result, evaluated)
+	}
+
+	return result
 }
