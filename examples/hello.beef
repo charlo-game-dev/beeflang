@@ -1,0 +1,6 @@
+# Hello, Beef! - A simple Beeflang program
+
+praise genesis():
+   cut message = 42
+   preach(message)
+beef
