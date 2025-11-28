@@ -9,7 +9,9 @@ import (
 	"github.com/elitwilson/beeflang/internal/token"
 )
 
-// Precedence levels for operator precedence parsing
+// Precedence levels for Pratt parsing - higher number = higher precedence
+// This ensures 5 + 3 * 2 parses as 5 + (3 * 2), not (5 + 3) * 2
+// Teaches the language "order of operations"
 const (
 	_ int = iota
 	LOWEST
@@ -35,7 +37,14 @@ var precedences = map[token.TokenType]int{
 	token.LPAREN:   CALL,
 }
 
-// Parser parses tokens into an AST using Pratt parsing (top-down operator precedence)
+// Parser uses Pratt parsing (top-down operator precedence) to build an AST.
+// Pratt parsing elegantly handles operator precedence by associating each
+// token with parsing functions and precedence levels.
+//
+// Key concepts:
+// - curToken/peekToken: two-token lookahead for parsing decisions
+// - prefixParseFns: how to parse tokens at the start of expressions (like "42" or "-5")
+// - infixParseFns: how to parse operators between expressions (like "+" in "5 + 3")
 type Parser struct {
 	l         *lexer.Lexer
 	errors    []string
@@ -47,8 +56,11 @@ type Parser struct {
 }
 
 type (
+	// prefixParseFn parses prefix expressions like literals (42) or prefix operators (-5)
 	prefixParseFn func() ast.Expression
-	infixParseFn  func(ast.Expression) ast.Expression
+	// infixParseFn parses infix expressions like binary operators (5 + 3)
+	// Takes the left side as input, parses the right side
+	infixParseFn func(ast.Expression) ast.Expression
 )
 
 // New creates a new Parser instance
