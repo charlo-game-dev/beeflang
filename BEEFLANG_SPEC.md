@@ -68,6 +68,7 @@ beef
 
 - **int** - integers
 - **bool** - true/false
+- **string** - text literals (double-quoted: `"Hello, Beef!"`)
 
 **Type System:** Dynamically typed (inferred from value)
 
@@ -89,7 +90,7 @@ beef
 - [x] Standard operators
 
 ### 5. ~~Data Types~~ ✓
-- [x] int, bool (dynamically typed)
+- [x] int, bool, string (dynamically typed)
 
 ### 6. ~~Entry Point~~ ✓
 - [x] `genesis` - main function
@@ -126,15 +127,18 @@ praise factorial(n):
    if n <= 1:
       serve 1
    beef
-   
+
    cut result = n * factorial(n - 1)
    serve result
 beef
 
 praise genesis():
+   preach("Welcome to the Church of Beef!")
+
    cut num = 5
    cut answer = factorial(num)
-   preach(answer)  # outputs: 120
+   cut message = "The answer is: " + answer
+   preach(message)  # outputs: The answer is: 120
 beef
 ```
 
