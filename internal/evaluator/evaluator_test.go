@@ -406,3 +406,58 @@ calculate()
 		assert.Equal(t, tt.expected, integer.Value, "Input: %s", tt.input)
 	}
 }
+
+// Phase 4: Loops - Real failing tests
+
+func TestEvalWhileLoop(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		// Basic countdown loop
+		{`
+cut counter = 5
+feast while counter > 0:
+   cut counter = counter - 1
+beef
+counter
+`, 0},
+		// Loop with accumulator
+		{`
+cut sum = 0
+cut i = 1
+feast while i <= 5:
+   cut sum = sum + i
+   cut i = i + 1
+beef
+sum
+`, 15}, // 1+2+3+4+5 = 15
+		// Loop that doesn't execute
+		{`
+cut x = 0
+feast while x > 10:
+   cut x = x + 1
+beef
+x
+`, 0},
+		// Nested variable mutation
+		{`
+cut result = 1
+cut count = 5
+feast while count > 0:
+   cut result = result * 2
+   cut count = count - 1
+beef
+result
+`, 32}, // 1 * 2^5 = 32
+	}
+
+	for _, tt := range tests {
+		result := testEval(tt.input)
+		assert.NotNil(t, result, "Input: %s", tt.input)
+
+		integer, ok := result.(*object.Integer)
+		assert.True(t, ok, "Result should be an Integer for input: %s", tt.input)
+		assert.Equal(t, tt.expected, integer.Value, "Input: %s", tt.input)
+	}
+}
