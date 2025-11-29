@@ -9,5 +9,11 @@ praise factorial(n):
    serve n * factorial(n - 1)
 beef
 
-# Calculate 5! = 5 * 4 * 3 * 2 * 1 = 120
-factorial(5)
+wrangle io
+
+# Entry point
+praise ChurchOfBeef():
+  prep result = factorial(5)
+  io.preach("Factorial(5) =")
+  io.preach(result)
+beef

@@ -1,5 +1,12 @@
 wrangle io
 
-io.preach("Hello from the Church of Beef!")
-io.preach(42)
-io.preach("The answer is: ")
+praise ChurchOfBeef():
+  io.preach("What are you thankful for this Thanksgiving and why is it beef?")
+  prep answer = io.input()
+
+  if answer == "beef":
+    io.preach("Braised be!")
+  else:
+    io.preach("You have been removed from Church of Beef")
+  beef
+beef

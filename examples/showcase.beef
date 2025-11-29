@@ -39,15 +39,22 @@ praise power(x, n):
    serve result
 beef
 
-# Main calculations
-# GCD of 48 and 18 should be 6
-prep result1 = gcd(48, 18)
+wrangle io
 
-# Sum from 1 to 10 should be 55
-prep result2 = sum_to_n(10)
+# Entry point
+praise ChurchOfBeef():
+  # GCD of 48 and 18 should be 6
+  prep result1 = gcd(48, 18)
+  io.preach("GCD(48, 18) =")
+  io.preach(result1)
 
-# 2^10 should be 1024
-prep result3 = power(2, 10)
+  # Sum from 1 to 10 should be 55
+  prep result2 = sum_to_n(10)
+  io.preach("Sum(1 to 10) =")
+  io.preach(result2)
 
-# Return the final result
-result3
+  # 2^10 should be 1024
+  prep result3 = power(2, 10)
+  io.preach("2^10 =")
+  io.preach(result3)
+beef

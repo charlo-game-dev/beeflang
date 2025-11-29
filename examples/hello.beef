@@ -1,5 +1,10 @@
 # Hello, Beef! - A simple Beeflang program
-# Returns the answer to life, the universe, and everything
+# Demonstrates basic variables and the ChurchOfBeef entry point
 
-prep answer = 42
-answer
+wrangle io
+
+praise ChurchOfBeef():
+  prep answer = 42
+  io.preach("The answer is:")
+  io.preach(answer)
+beef

@@ -39,5 +39,11 @@ praise is_prime(n):
    serve true
 beef
 
-# Test: is 97 prime?
-is_prime(97)
+wrangle io
+
+# Entry point
+praise ChurchOfBeef():
+  prep result = is_prime(97)
+  io.preach("Is 97 prime?")
+  io.preach(result)
+beef

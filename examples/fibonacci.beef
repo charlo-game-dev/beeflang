@@ -22,6 +22,11 @@ praise fibonacci(n):
    serve b
 beef
 
-# Calculate the 10th Fibonacci number
-prep result = fibonacci(10)
-result
+wrangle io
+
+# Entry point
+praise ChurchOfBeef():
+  prep result = fibonacci(10)
+  io.preach("Fibonacci(10) =")
+  io.preach(result)
+beef

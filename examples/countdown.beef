@@ -1,10 +1,15 @@
-# Countdown example - demonstrates loops and variables
+# Countdown example - demonstrates loops and I/O
+
+wrangle io
 
 praise countdown(n):
-   feast while n > 0:
-      n = n - 1
-   beef
-   serve n
+  feast while n > 0:
+    io.preach(n)
+    n = n - 1
+  beef
+  io.preach("Liftoff!")
 beef
 
-prep result = countdown(10)
+praise ChurchOfBeef():
+  countdown(10)
+beef
