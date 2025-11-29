@@ -236,3 +236,4 @@ Beeflang is **Turing-complete**, meaning it can compute anything computable. Try
 ## License
 
 This is a learning project. Do whatever you want with it. 🥩
+# Contributors update
