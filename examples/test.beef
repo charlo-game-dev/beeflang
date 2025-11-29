@@ -1,28 +1,12 @@
 wrangle io
 
-praise myfunc():
-  # Variable definitions
-  prep res = ""
-
-  # Input
+praise ChurchOfBeef():
   io.preach("What are you thankful for this Thanksgiving and why is it beef?")
-  res = collectInput()
-  io.preach("You answered: ")
-  io.preach(res)
+  prep answer = io.input()
 
-  if res == "beef":
+  if answer == "beef":
     io.preach("Braised be!")
   else:
     io.preach("You have been removed from Church of Beef")
   beef
 beef
-
-praise collectInput():
-  prep input = ""
-
-  input = io.input()
-
-  serve input
-beef
-
-myfunc()

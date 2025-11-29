@@ -57,7 +57,6 @@ const (
 	ELSE        TokenType = "ELSE"
 	PREP        TokenType = "PREP"    // variable declaration
 	SERVE       TokenType = "SERVE"   // return
-	GENESIS     TokenType = "GENESIS" // main/entry point
 	WRANGLE     TokenType = "WRANGLE" // import module
 	HERD        TokenType = "HERD"    // module keyword
 	TRUE        TokenType = "TRUE"
@@ -76,7 +75,6 @@ var keywords = map[string]TokenType{
 	"else":    ELSE,
 	"prep":    PREP,
 	"serve":   SERVE,
-	"genesis": GENESIS,
 	"wrangle": WRANGLE,
 	"herd":    HERD,
 	"true":    TRUE,

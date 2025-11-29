@@ -94,7 +94,7 @@ func TestTokenizeIdentifiersWithDigits(t *testing.T) {
 // ========================================
 
 func TestTokenizeKeywords(t *testing.T) {
-	input := "prep praise beef genesis serve if else"
+	input := "prep praise beef serve if else"
 	l := New(input)
 
 	expectedTokens := []struct {
@@ -104,7 +104,6 @@ func TestTokenizeKeywords(t *testing.T) {
 		{token.PREP, "prep"},
 		{token.PRAISE, "praise"},
 		{token.BEEF, "beef"},
-		{token.GENESIS, "genesis"},
 		{token.SERVE, "serve"},
 		{token.IF, "if"},
 		{token.ELSE, "else"},
