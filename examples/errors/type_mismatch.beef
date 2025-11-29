@@ -1,0 +1,14 @@
+# Error Example: Type Mismatch
+# This demonstrates what happens when you try to add incompatible types
+
+wrangle io
+
+praise ChurchOfBeef():
+  prep x = 5
+  prep y = true
+
+  # This will cause a type mismatch error at line 10, column 13
+  prep result = x + y
+
+  io.preach("This line will never execute")
+beef

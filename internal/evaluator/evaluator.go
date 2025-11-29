@@ -7,6 +7,7 @@ import (
 
 	"github.com/elitwilson/beeflang/internal/ast"
 	"github.com/elitwilson/beeflang/internal/object"
+	"github.com/elitwilson/beeflang/internal/token"
 )
 
 // Eval evaluates an AST node and returns the resulting runtime object.
@@ -35,12 +36,21 @@ func Eval(node ast.Node, env *Environment) object.Object {
 	// Expressions: evaluate recursively
 	case *ast.PrefixExpression:
 		right := Eval(n.Right, env)
-		return evalPrefixExpression(n.Operator, right)
+		if isError(right) {
+			return right
+		}
+		return evalPrefixExpression(n.Token, n.Operator, right)
 
 	case *ast.InfixExpression:
 		left := Eval(n.Left, env)
+		if isError(left) {
+			return left
+		}
 		right := Eval(n.Right, env)
-		return evalInfixExpression(n.Operator, left, right)
+		if isError(right) {
+			return right
+		}
+		return evalInfixExpression(n.Token, n.Operator, left, right)
 
 	// Statements
 	case *ast.VariableDeclaration:
@@ -89,6 +99,16 @@ func evalProgram(program *ast.Program, env *Environment) object.Object {
 
 	for _, statement := range program.Statements {
 		result = Eval(statement, env)
+
+		// Stop evaluation if we hit an error
+		if isError(result) {
+			return result
+		}
+
+		// Stop evaluation if we hit a return statement
+		if returnValue, ok := result.(*object.ReturnValue); ok {
+			return returnValue.Value
+		}
 	}
 
 	return result
@@ -98,21 +118,20 @@ func evalProgram(program *ast.Program, env *Environment) object.Object {
 func evalIdentifier(node *ast.Identifier, env *Environment) object.Object {
 	val, ok := env.Get(node.Value)
 	if !ok {
-		// Variable not found - return null for now (later we'll add error handling)
-		return object.NULL
+		return newError(node.Token, "identifier not found: %s", node.Value)
 	}
 	return val
 }
 
 // evalPrefixExpression evaluates prefix expressions like -5 or !true
-func evalPrefixExpression(operator string, right object.Object) object.Object {
+func evalPrefixExpression(tok token.Token, operator string, right object.Object) object.Object {
 	switch operator {
 	case "!":
 		return evalBangOperator(right)
 	case "-":
-		return evalMinusPrefixOperator(right)
+		return evalMinusPrefixOperator(tok, right)
 	default:
-		return object.NULL
+		return newError(tok, "unknown operator: %s%s", operator, right.Type())
 	}
 }
 
@@ -131,9 +150,9 @@ func evalBangOperator(right object.Object) object.Object {
 }
 
 // evalMinusPrefixOperator implements the - (negation) operator
-func evalMinusPrefixOperator(right object.Object) object.Object {
+func evalMinusPrefixOperator(tok token.Token, right object.Object) object.Object {
 	if right.Type() != "INTEGER" {
-		return object.NULL
+		return newError(tok, "unknown operator: -%s", right.Type())
 	}
 
 	value := right.(*object.Integer).Value
@@ -141,15 +160,15 @@ func evalMinusPrefixOperator(right object.Object) object.Object {
 }
 
 // evalInfixExpression evaluates infix expressions like 5 + 3 or 10 > 5
-func evalInfixExpression(operator string, left, right object.Object) object.Object {
+func evalInfixExpression(tok token.Token, operator string, left, right object.Object) object.Object {
 	switch {
 	// Integer operations
 	case left.Type() == "INTEGER" && right.Type() == "INTEGER":
-		return evalIntegerInfixExpression(operator, left, right)
+		return evalIntegerInfixExpression(tok, operator, left, right)
 
 	// String concatenation
 	case left.Type() == "STRING" && right.Type() == "STRING":
-		return evalStringInfixExpression(operator, left, right)
+		return evalStringInfixExpression(tok, operator, left, right)
 
 	// Boolean comparison (using pointer equality optimization)
 	case operator == "==":
@@ -157,13 +176,17 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
 
+	// Type mismatch
+	case left.Type() != right.Type():
+		return newError(tok, "type mismatch: %s %s %s", left.Type(), operator, right.Type())
+
 	default:
-		return object.NULL
+		return newError(tok, "unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
 // evalIntegerInfixExpression handles arithmetic and comparison on integers
-func evalIntegerInfixExpression(operator string, left, right object.Object) object.Object {
+func evalIntegerInfixExpression(tok token.Token, operator string, left, right object.Object) object.Object {
 	leftVal := left.(*object.Integer).Value
 	rightVal := right.(*object.Integer).Value
 
@@ -195,12 +218,12 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 		return nativeBoolToBooleanObject(leftVal >= rightVal)
 
 	default:
-		return object.NULL
+		return newError(tok, "unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
 // evalStringInfixExpression handles string operations
-func evalStringInfixExpression(operator string, left, right object.Object) object.Object {
+func evalStringInfixExpression(tok token.Token, operator string, left, right object.Object) object.Object {
 	leftVal := left.(*object.String).Value
 	rightVal := right.(*object.String).Value
 
@@ -212,7 +235,7 @@ func evalStringInfixExpression(operator string, left, right object.Object) objec
 	case "!=":
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
-		return object.NULL
+		return newError(tok, "unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -232,6 +255,11 @@ func evalBlockStatement(block *ast.BlockStatement, env *Environment) object.Obje
 
 	for _, statement := range block.Statements {
 		result = Eval(statement, env)
+
+		// Stop execution if we hit an error
+		if isError(result) {
+			return result
+		}
 
 		// If we hit a return statement, stop executing and bubble it up
 		if result != nil && result.Type() == "RETURN_VALUE" {
@@ -295,9 +323,16 @@ func evalReturnStatement(stmt *ast.ReturnStatement, env *Environment) object.Obj
 func evalFunctionCall(call *ast.FunctionCall, env *Environment) object.Object {
 	// Evaluate the function expression (usually an identifier or member access)
 	function := Eval(call.Function, env)
+	if isError(function) {
+		return function
+	}
 
 	// Evaluate all arguments
 	args := evalExpressions(call.Arguments, env)
+	// Check if any argument evaluation resulted in an error
+	if len(args) == 1 && isError(args[0]) {
+		return args[0]
+	}
 
 	// Check if it's a builtin function
 	if builtin, ok := function.(*object.Builtin); ok {
@@ -308,7 +343,7 @@ func evalFunctionCall(call *ast.FunctionCall, env *Environment) object.Object {
 	fn, ok := function.(*object.Function)
 	if !ok {
 		// Not a function - error
-		return object.NULL
+		return newError(call.Token, "not a function: %s", function.Type())
 	}
 
 	// Create new environment for function execution (enclosed by function's closure env)
@@ -321,6 +356,11 @@ func evalFunctionCall(call *ast.FunctionCall, env *Environment) object.Object {
 
 	// Execute function body
 	result := Eval(fn.Body, fnEnv)
+
+	// Propagate errors from function body
+	if isError(result) {
+		return result
+	}
 
 	// Only return a value if there was an explicit "serve" statement
 	// Otherwise, functions return NULL (for side-effect-only functions)
@@ -449,4 +489,30 @@ func createIOModule() *object.Module {
 	})
 
 	return mod
+}
+
+// ========================================
+// Error Handling Helpers
+// ========================================
+
+// newError creates an Error object with a formatted message and location information.
+// The token provides line and column numbers for helpful error messages.
+//
+// Usage: return newError(node.Token, "type mismatch: %s + %s", left.Type(), right.Type())
+func newError(tok token.Token, format string, a ...interface{}) *object.Error {
+	return &object.Error{
+		Message: fmt.Sprintf(format, a...),
+		Line:    tok.Line,
+		Column:  tok.Column,
+		// File is set by main.go when running from a file
+	}
+}
+
+// isError checks if an object is an Error.
+// Used throughout the evaluator to detect and propagate errors up the call stack.
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == "ERROR"
+	}
+	return false
 }

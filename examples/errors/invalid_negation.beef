@@ -1,0 +1,13 @@
+# Error Example: Invalid Negation
+# This demonstrates what happens when you try to negate a non-integer
+
+wrangle io
+
+praise ChurchOfBeef():
+  prep x = true
+
+  # Can't negate a boolean - the minus operator only works on integers
+  prep result = -x
+
+  io.preach("This line will never execute")
+beef

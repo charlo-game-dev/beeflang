@@ -1,0 +1,14 @@
+# Error Example: Undefined Variable
+# This demonstrates what happens when you reference a variable that doesn't exist
+
+wrangle io
+
+praise ChurchOfBeef():
+  prep x = 5
+  io.preach(x)
+
+  # This will cause an "identifier not found" error
+  io.preach(someUndefinedVariable)
+
+  io.preach("This line will never execute")
+beef

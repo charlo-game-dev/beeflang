@@ -199,3 +199,37 @@ func (b *Builtin) Type() string {
 func (b *Builtin) Inspect() string {
 	return "<builtin>"
 }
+
+// Error represents a runtime error in Beeflang.
+// When evaluation encounters an error, it returns an Error object
+// instead of panicking or returning nil.
+//
+// Errors are first-class values in Beeflang - they implement the Object
+// interface and can be stored, passed around, and inspected. This design
+// supports future evolution toward explicit error handling (Result types).
+//
+// Location information (Line, Column, File) is included from the start
+// because Token already tracks this data and it's much easier to thread
+// through during implementation than to retrofit later.
+type Error struct {
+	Message string
+	Line    int    // Line number where error occurred (from Token)
+	Column  int    // Column number where error occurred (from Token)
+	File    string // Source file path (empty string if not from file)
+}
+
+func (e *Error) Type() string {
+	return "ERROR"
+}
+
+func (e *Error) Inspect() string {
+	if e.File != "" {
+		return fmt.Sprintf("Error at %s:%d:%d - %s",
+			e.File, e.Line, e.Column, e.Message)
+	}
+	if e.Line > 0 {
+		return fmt.Sprintf("Error at line %d, column %d - %s",
+			e.Line, e.Column, e.Message)
+	}
+	return "Error: " + e.Message
+}

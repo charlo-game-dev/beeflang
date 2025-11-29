@@ -70,7 +70,13 @@ func main() {
 
 	// Evaluate the program (this loads all function/variable declarations)
 	env := object.NewEnvironment()
-	evaluator.Eval(program, env)
+	result := evaluator.Eval(program, env)
+
+	// Check for errors during program evaluation
+	if result != nil && result.Type() == "ERROR" {
+		fmt.Fprintf(os.Stderr, "%s\n", result.Inspect())
+		os.Exit(1)
+	}
 
 	// Auto-call ChurchOfBeef() if it exists (entry point function)
 	if entryPoint, ok := env.Get("ChurchOfBeef"); ok {
@@ -78,7 +84,13 @@ func main() {
 			// Create new environment for ChurchOfBeef() execution
 			entryEnv := object.NewEnclosedEnvironment(fn.Env)
 			// Execute ChurchOfBeef() body
-			evaluator.Eval(fn.Body, entryEnv)
+			result := evaluator.Eval(fn.Body, entryEnv)
+
+			// Check for errors during ChurchOfBeef() execution
+			if result != nil && result.Type() == "ERROR" {
+				fmt.Fprintf(os.Stderr, "%s\n", result.Inspect())
+				os.Exit(1)
+			}
 		} else {
 			fmt.Println("Error: ChurchOfBeef is not a function")
 			os.Exit(1)

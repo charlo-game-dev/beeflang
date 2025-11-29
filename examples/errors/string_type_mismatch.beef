@@ -1,0 +1,14 @@
+# Error Example: String Type Mismatch
+# This demonstrates what happens when you try to add a string and an integer
+
+wrangle io
+
+praise ChurchOfBeef():
+  prep greeting = "Hello"
+  prep number = 42
+
+  # Can't add a string and an integer
+  prep result = greeting + number
+
+  io.preach("This line will never execute")
+beef

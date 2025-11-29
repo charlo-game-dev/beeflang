@@ -1,0 +1,6 @@
+wrangle io
+
+praise ChurchOfBeef():
+  prep x = 5 + true
+  io.preach("Should not print")
+beef

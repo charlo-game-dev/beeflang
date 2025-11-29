@@ -178,3 +178,47 @@ func TestBuiltinFunction(t *testing.T) {
 
 	assert.Equal(t, arg, result)
 }
+
+// ========================================
+// Error Object Tests
+// ========================================
+
+// Phase 2: Real failing tests
+func TestErrorObjectType(t *testing.T) {
+	err := &Error{Message: "something went wrong"}
+	assert.Equal(t, "ERROR", err.Type())
+}
+
+func TestErrorObjectInspectWithoutLocation(t *testing.T) {
+	err := &Error{
+		Message: "something went wrong",
+		Line:    0,
+		Column:  0,
+		File:    "",
+	}
+	assert.Equal(t, "Error: something went wrong", err.Inspect())
+}
+
+func TestErrorObjectInspectWithLineColumn(t *testing.T) {
+	err := &Error{
+		Message: "index out of bounds",
+		Line:    4,
+		Column:  10,
+		File:    "",
+	}
+	assert.Equal(t, "Error at line 4, column 10 - index out of bounds", err.Inspect())
+}
+
+func TestErrorObjectInspectWithFile(t *testing.T) {
+	err := &Error{
+		Message: "type mismatch",
+		Line:    12,
+		Column:  5,
+		File:    "examples/test.beef",
+	}
+	assert.Equal(t, "Error at examples/test.beef:12:5 - type mismatch", err.Inspect())
+}
+
+func TestErrorImplementsObjectInterface(t *testing.T) {
+	var _ Object = &Error{}
+}

@@ -461,3 +461,138 @@ result
 		assert.Equal(t, tt.expected, integer.Value, "Input: %s", tt.input)
 	}
 }
+
+// ========================================
+// Error Infrastructure Tests
+// ========================================
+
+// Phase 2: Real failing tests
+func TestIsErrorHelper(t *testing.T) {
+	// isError should return true for Error objects
+	err := &object.Error{Message: "test error"}
+	assert.True(t, isError(err))
+
+	// isError should return false for other objects
+	integer := &object.Integer{Value: 42}
+	assert.False(t, isError(integer))
+
+	boolean := &object.Boolean{Value: true}
+	assert.False(t, isError(boolean))
+
+	// isError should return false for nil
+	assert.False(t, isError(nil))
+}
+
+func TestErrorPropagation(t *testing.T) {
+	// Errors should stop evaluation and propagate up
+	input := `
+5 + true
+10
+`
+	result := testEval(input)
+
+	errObj, ok := result.(*object.Error)
+	assert.True(t, ok, "Expected error object")
+	assert.Contains(t, errObj.Message, "type mismatch")
+	// The second statement (10) should NOT be evaluated
+}
+
+func TestTypeErrorMessages(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{"5 + true", "type mismatch"},
+		{"5 + \"hello\"", "type mismatch"},
+		{"true + false", "unknown operator"},
+		{"-true", "unknown operator"},
+	}
+
+	for _, tt := range tests {
+		result := testEval(tt.input)
+
+		errObj, ok := result.(*object.Error)
+		assert.True(t, ok, "Expected error for input: %s", tt.input)
+		assert.Contains(t, errObj.Message, tt.expectedMessage, "Input: %s", tt.input)
+		assert.Greater(t, errObj.Line, 0, "Error should have line number")
+	}
+}
+
+func TestUndefinedVariableError(t *testing.T) {
+	input := "foobar"
+	result := testEval(input)
+
+	errObj, ok := result.(*object.Error)
+	assert.True(t, ok, "Expected error object")
+	assert.Contains(t, errObj.Message, "identifier not found")
+	assert.Contains(t, errObj.Message, "foobar")
+}
+
+func TestUnknownOperatorError(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{"-true"},
+		{"true + false"},
+		{"5; true + false; 5"},
+	}
+
+	for _, tt := range tests {
+		result := testEval(tt.input)
+
+		errObj, ok := result.(*object.Error)
+		assert.True(t, ok, "Expected error for input: %s", tt.input)
+		assert.Contains(t, errObj.Message, "unknown operator", "Input: %s", tt.input)
+	}
+}
+
+func TestErrorStopsEvaluation(t *testing.T) {
+	// When an error occurs, subsequent statements should not be evaluated
+	input := `
+prep x = 5
+prep y = x + true
+prep z = 10
+z
+`
+	result := testEval(input)
+
+	errObj, ok := result.(*object.Error)
+	assert.True(t, ok, "Expected error object")
+	// The error should be about the type mismatch, not about z being undefined
+	assert.Contains(t, errObj.Message, "type mismatch")
+}
+
+func TestErrorStopsBlockEvaluation(t *testing.T) {
+	// Errors should stop evaluation within a block (like function bodies)
+	input := `
+praise testFunc():
+   prep x = 5
+   prep y = x + true
+   prep z = 10
+   z
+beef
+
+testFunc()
+`
+	result := testEval(input)
+
+	errObj, ok := result.(*object.Error)
+	assert.True(t, ok, "Expected error object")
+	assert.Contains(t, errObj.Message, "type mismatch")
+}
+
+func TestErrorPropagatesFromFunctionCall(t *testing.T) {
+	// Errors in function bodies should propagate to the caller
+	input := `
+praise badFunc():
+   serve 5 + true
+beef
+
+prep result = badFunc()
+`
+	result := testEval(input)
+
+	errObj, ok := result.(*object.Error)
+	assert.True(t, ok, "Expected error object")
+	assert.Contains(t, errObj.Message, "type mismatch")
+}

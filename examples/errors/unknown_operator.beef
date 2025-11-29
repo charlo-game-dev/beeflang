@@ -1,0 +1,14 @@
+# Error Example: Unknown Operator
+# This demonstrates what happens when you use an invalid operator
+
+wrangle io
+
+praise ChurchOfBeef():
+  prep x = true
+  prep y = false
+
+  # Booleans don't support the + operator
+  prep result = x + y
+
+  io.preach("This line will never execute")
+beef
